@@ -7,7 +7,7 @@ import java.util.Scanner;
 /**
  * A program that creates a decision tree for determining whether given text samples
  * are in English or Dutch. It also uses adaptive boosting to create a weighted stump
- * array to predict the language of the text samples.
+ * array to predict the language of the given text samples.
  * 
  * @author pmh6003
  */
