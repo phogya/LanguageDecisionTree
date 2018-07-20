@@ -177,134 +177,8 @@ public class DecisionTree {
 		}
 	}
 	
-	/**
-	 * Adaptive boosting algorithm that gets an array of weighted stumps from a series of
-	 * attributes and examples to apply those attributes to in order to predict the 
-	 * language of a piece of text
-	 * 
-	 * @param examples		The training examples
-	 * @param attributes	The potential hypotheses
-	 * @param k				The number of hypotheses to use
-	 * @return				An array of hypotheses with their weights
-	 */
-	static WeightedStump[] adaBoost(ArrayList<String> examples, ArrayList<Attribute> attributes, int k) {
-		
-		WeightedStump[] wt = new WeightedStump[k];
-		
-		double N = examples.size();
-		double[] weights = new double[(int) N];
-		Arrays.fill(weights, (1/N));
-		
-		Branch[] hypotheses = new Branch[k];
-		double[] hypoWeights = new double[k];
-		
-		// Used to convert boolean values from attributes to chars for comparison with examples;
-		char bool;
-		
-		// Used to determine which language a stump tilts the results towards
-		char tilt;
-		int numTilt = 0;
-		
-		double error;
-		for(int i=0; i<k; i++) {
-			hypotheses[i] = adaLearning(examples, attributes, weights);
-			error = 0;
-			
-			for(int j=0; j<N; j++) {
-				
-				// Setup bool char
-				if(hypotheses[i].doTest(examples.get(j)) == true) {
-					bool = 'E';
-				} else {
-					bool = 'D';
-				}
-				
-				if( bool != examples.get(j).charAt(examples.get(j).length() -1)) {
-					numTilt += 1;
-					error += weights[j];
-				}
 
-			}
-			for(int j=0; j<N; j++) {
-				
-				// Setup bool char
-				if(hypotheses[i].doTest(examples.get(j)) == true) {
-					bool = 'E';
-				} else {
-					bool = 'D';
-				}
-				
-				if( bool == examples.get(j).charAt(examples.get(j).length() -1)) {
-					numTilt -= 1;
-					weights[j] = weights[j] * error / (1 - error);
-				}
-			}
-			
-			if(numTilt > 0) {
-				tilt = 'D';
-			} else {
-				tilt = 'E';
-			}
-			
-			weights = normalize(weights);
-			hypoWeights[i] = Math.log(1 - error) / error;
-			wt[i] = new WeightedStump(hypotheses[i], hypoWeights[i], tilt);
-			numTilt = 0;
-		}
-		return wt;
-	}
-	
-
-	/**
-	 * Predicts the language of a sample using the given tree.
-	 * 
-	 * @param current	The tree to start at, used for recursion as well
-	 * @param sample	The sample to predict
-	 * @return	The language, 'E' for English, 'D' for Dutch
-	 */
-	static char treePredict(Node current, String sample) {
-		
-		if(current.type() == 'B') {
-			Branch b = (Branch) current;
-			
-			if(b.doTest(sample) == true) {
-				return treePredict(b.childT, sample);
-			} else {
-				return treePredict(b.childF, sample);
-			}
-		} else {
-			Leaf l = (Leaf) current;
-			return l.c;
-		}
-	}
-	
-	/**
-	 * Predicts the language of an example using the given weighted stumps
-	 * 
-	 * @param current	The weighted stumps to use
-	 * @param example	The example to predict
-	 * @return	The language, 'E' for English, 'D' for Dutch
-	 */
-	static char stumpPredict(WeightedStump[] stumps, String sample) {
-		
-		double weightE = 0;
-		double weightD = 0;
-		
-		for(int i=0; i<stumps.length; i++) {
-			if(stumps[i].getStump().doTest(sample) == true) {
-				if(stumps[i].getTilt() == 'E') {
-					weightE += stumps[i].getWeight();
-				} else {
-					weightD += stumps[i].getWeight();
-				}
-			}
-		}
-		if(weightD < weightE) {
-			return 'D';
-		} else {
-			return 'E';
-		}
-	}
+// Decision Tree Functions
 	
 	/**
 	 * Creates a decision tree using the given attributes based on the given
@@ -383,34 +257,6 @@ public class DecisionTree {
 				return root;
 			}
 		}
-	}
-
-	/**
-	 * Helper function for adaBoost, selects the highest information gain stump from
-	 * attributes based on the given weights
-	 * 
-	 * @param examples
-	 * @param attributes
-	 * @param weights
-	 * @return
-	 */
-	static Branch adaLearning(ArrayList<String> examples, ArrayList<Attribute> attributes, double[] weights) {
-		
-		double max = 0;
-		double current = 0;
-		int mindex = 0;
-		for(int i=0; i<attributes.size(); i++) {
-			current = adaImportance(attributes.get(i), examples, weights);
-			if(current > max ) {
-				max = current;
-				mindex = i;
-			}
-		}
-		
-		Attribute A = attributes.get(mindex);
-		Branch root = new Branch(A, null, null, null);
-
-		return root;
 	}
 	
 	/**
@@ -509,6 +355,136 @@ public class DecisionTree {
 	}
 	
 	/**
+	 * Predicts the language of a sample using the given tree.
+	 * 
+	 * @param current	The tree to start at, used for recursion as well
+	 * @param sample	The sample to predict
+	 * @return	The language, 'E' for English, 'D' for Dutch
+	 */
+	static char treePredict(Node current, String sample) {
+		
+		if(current.type() == 'B') {
+			Branch b = (Branch) current;
+			
+			if(b.doTest(sample) == true) {
+				return treePredict(b.childT, sample);
+			} else {
+				return treePredict(b.childF, sample);
+			}
+		} else {
+			Leaf l = (Leaf) current;
+			return l.c;
+		}
+	}
+	
+// Adaptive Boosting Functions
+	
+	/**
+	 * Adaptive boosting algorithm that gets an array of weighted stumps from a series of
+	 * attributes and examples to apply those attributes to in order to predict the 
+	 * language of a piece of text
+	 * 
+	 * @param examples		The training examples
+	 * @param attributes	The potential hypotheses
+	 * @param k				The number of hypotheses to use
+	 * @return				An array of hypotheses with their weights
+	 */
+	static WeightedStump[] adaBoost(ArrayList<String> examples, ArrayList<Attribute> attributes, int k) {
+		
+		WeightedStump[] wt = new WeightedStump[k];
+		
+		double N = examples.size();
+		double[] weights = new double[(int) N];
+		Arrays.fill(weights, (1/N));
+		
+		Branch[] hypotheses = new Branch[k];
+		double[] hypoWeights = new double[k];
+		
+		// Used to convert boolean values from attributes to chars for comparison with examples;
+		char bool;
+		
+		// Used to determine which language a stump tilts the results towards
+		char tilt;
+		int numTilt = 0;
+		
+		double error;
+		for(int i=0; i<k; i++) {
+			hypotheses[i] = adaLearning(examples, attributes, weights);
+			error = 0;
+			
+			for(int j=0; j<N; j++) {
+				
+				// Setup bool char
+				if(hypotheses[i].doTest(examples.get(j)) == true) {
+					bool = 'E';
+				} else {
+					bool = 'D';
+				}
+				
+				if( bool != examples.get(j).charAt(examples.get(j).length() -1)) {
+					numTilt += 1;
+					error += weights[j];
+				}
+
+			}
+			for(int j=0; j<N; j++) {
+				
+				// Setup bool char
+				if(hypotheses[i].doTest(examples.get(j)) == true) {
+					bool = 'E';
+				} else {
+					bool = 'D';
+				}
+				
+				if( bool == examples.get(j).charAt(examples.get(j).length() -1)) {
+					numTilt -= 1;
+					weights[j] = weights[j] * error / (1 - error);
+				}
+			}
+			
+			if(numTilt > 0) {
+				tilt = 'D';
+			} else {
+				tilt = 'E';
+			}
+			
+			weights = normalize(weights);
+			hypoWeights[i] = Math.log(1 - error) / error;
+			wt[i] = new WeightedStump(hypotheses[i], hypoWeights[i], tilt);
+			numTilt = 0;
+		}
+		return wt;
+	}
+	
+	/**
+	 * Helper function for adaBoost, selects the highest information gain stump from
+	 * attributes based on the given weights
+	 * 
+	 * @param examples
+	 * @param attributes
+	 * @param weights
+	 * @return
+	 */
+	static Branch adaLearning(ArrayList<String> examples, ArrayList<Attribute> attributes, double[] weights) {
+		
+		double max = 0;
+		double current = 0;
+		int mindex = 0;
+		for(int i=0; i<attributes.size(); i++) {
+			current = adaImportance(attributes.get(i), examples, weights);
+			if(current > max ) {
+				max = current;
+				mindex = i;
+			}
+		}
+		
+		Attribute A = attributes.get(mindex);
+		Branch root = new Branch(A, null, null, null);
+
+		return root;
+	}
+	
+	/**
 	 * The information gain of the given attributes over the given examples
 	 * where each example is weighted according to the weights argument.
 	 * 
@@ -559,20 +535,6 @@ public class DecisionTree {
 	}
 	
 	/**
-	 * The entropy of the given probability. The log functions
-	 * fail when q is 0 or 1 so there is a special case catch.
-	 * 
-	 * @param q		The given probability
-	 * @return	The entropy
-	 */
-	static double entropy(double q) {
-		if( q == 0 || q == 1) {
-			return 0;
-		}
-		return (-(q * (Math.log10(q) / Math.log10(2.)) + ((1 - q) * (Math.log10(1 - q) / Math.log10(2.)))));
-	}
-	
-	/**
 	 * Normalizes an array of doubles so that all doubles maintain
 	 * their proportions but all summed equal 1.
 	 * 
@@ -589,6 +551,50 @@ public class DecisionTree {
 			weights[i] = weights[i] / denominator;
 		}
 		return weights;
+	}
+	
+	/**
+	 * Predicts the language of an example using the given weighted stumps
+	 * 
+	 * @param current	The weighted stumps to use
+	 * @param example	The example to predict
+	 * @return	The language, 'E' for English, 'D' for Dutch
+	 */
+	static char stumpPredict(WeightedStump[] stumps, String sample) {
+		
+		double weightE = 0;
+		double weightD = 0;
+		
+		for(int i=0; i<stumps.length; i++) {
+			if(stumps[i].getStump().doTest(sample) == true) {
+				if(stumps[i].getTilt() == 'E') {
+					weightE += stumps[i].getWeight();
+				} else {
+					weightD += stumps[i].getWeight();
+				}
+			}
+		}
+		if(weightD < weightE) {
+			return 'D';
+		} else {
+			return 'E';
+		}
+	}
+	
+// Utility and Printing Functions
+	
+	/**
+	 * The entropy of the given probability. The log functions
+	 * fail when q is 0 or 1 so there is a special case catch.
+	 * 
+	 * @param q		The given probability
+	 * @return	The entropy
+	 */
+	static double entropy(double q) {
+		if( q == 0 || q == 1) {
+			return 0;
+		}
+		return (-(q * (Math.log10(q) / Math.log10(2.)) + ((1 - q) * (Math.log10(1 - q) / Math.log10(2.)))));
 	}
 	
 	/**
