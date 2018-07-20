@@ -193,7 +193,7 @@ public class DecisionTree {
 	static Node decisionTreeLearning(ArrayList<String> examples, ArrayList<Attribute> attributes, ArrayList<String> parent_examples) {
 		
 		if(examples.isEmpty()) {
-			return (new Leaf(pluralityValue(parent_examples)));
+			return pluralityValue(parent_examples);
 			
 		} else {
 			
@@ -205,11 +205,13 @@ public class DecisionTree {
 					same = false;
 				}
 			}
+			
+			// All examples are the same
 			if(same == true) {
-				return (new Leaf(c));
+				return (new Leaf(c, 1));
 			
 			} else if (attributes.isEmpty()) {
-				return (new Leaf(pluralityValue(examples)));
+				return pluralityValue(examples);
 				
 			} else {
 				
@@ -226,7 +228,7 @@ public class DecisionTree {
 				
 				// If unable to differentiate examples end tree to prevent becoming needlessly larger
 				if( max == 0) {
-					return (new Leaf(pluralityValue(parent_examples)));
+					return pluralityValue(parent_examples);
 				}
 				
 				Attribute A = attributes.get(mindex);
@@ -260,13 +262,62 @@ public class DecisionTree {
 	}
 	
 	/**
+	 * The most common type of the given examples with 'E' always being selected if 
+	 * there is a tie.
+	 * 
+	 * @param examples	The examples to tabulate
+	 * @return	A leaf node containing the most common language and the probability
+	 */
+	public static Node pluralityValue(ArrayList<String> examples) {
+		
+		// nums[0] is number of E appearances
+		// nums[1] is number of D appearances
+		// nums[2] is number of I appearances (for use if italian is implemented)
+		
+		int[] nums = new int [3];
+		
+		for(int i=0; i< examples.size(); i++) {
+			
+			char current = examples.get(i).charAt(examples.get(i).length() -1);
+			if(current == 'E') {
+				nums[0] += 1;
+			}
+			if(current == 'D') {
+				nums[1] += 1;
+			}
+			if(current == 'I') {
+				nums[2] += 1;
+			}
+		}
+		
+		
+		// E is most common or there is a tie with either D or I
+		if( nums[0] >= nums[1] && nums[0] >= nums[2]) {
+			return new Leaf('E', (float) nums[0] / (float) (nums[0] + nums[1] + nums[2]));
+		}
+		
+		// D is most comman or there is a tie with I
+		if( nums[1] >= nums[0] && nums[1] >= nums[2]) {
+			return new Leaf ('D', (float) nums[1] / (float) (nums[0] + nums[1]+ nums[2]));
+		}
+		
+		// I is most common
+		if( nums[2] >= nums[0] && nums[2] >= nums[1]) {
+			return new Leaf ('I', (float) nums[2] / (float) (nums[0] + nums[1]+ nums[2]));
+		}
+		
+		// Should never reach here
+		return null;
+	}
+	
+	/**
 	 * The most common type of the given examples with 'E'
 	 * always being selected if there is a tie.
 	 * 
 	 * @param examples	The examples to tabulate
 	 * @return	The most common type of the examples
 	 */
-	public static char pluralityValue(ArrayList<String> examples) {
+	/* public static char pluralityValue(ArrayList<String> examples) {
 		
 		// nums[0] is number of E appearances
 		// nums[1] is number of D appearances
@@ -305,7 +356,7 @@ public class DecisionTree {
 		
 		// Should never reach here
 		return 0;
-	}
+	} */
 	
 	/**
 	 * The information gain of the given attribute over the given examples.
@@ -615,7 +666,7 @@ public class DecisionTree {
 			printTree(b.childF, n+1);
 		} else {
 			Leaf l = (Leaf) node;
-			System.out.println("\tOutput: " + l.c);
+			System.out.println("\tOutput: " + l.c + ", Probability: " + l.p);
 		}
 	}
 	
