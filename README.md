@@ -44,9 +44,4 @@ and the examples the program will attempt to predict. Feel free to edit both fil
 to try out different data sets, they will work as long as the last character on each
 line of Examples.txt is either an E or a D depending on the language of the line.
 
-**Please Note:** You will need to have the bin directory for your version of java in 
-your path to run the jar file. [You can find how to do that here.](https://stackoverflow.com/questions/15796855/java-is-not-recognized-as-an-internal-or-external-command)
-
-Alternatively if you don't want to use the runnable jar you can compile the code in
-the src directory and run it yourself. The main program is in DecisionTree.java and
-you may need to supply the arguments as ./src/Examples.txt ./src/Predict.txt
+**Please Note:** You must use the jar file to run the program rather than simply compiling and running it as javac will produce an error with character encodings for some of the accented characters.

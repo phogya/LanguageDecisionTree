@@ -399,6 +399,23 @@ public class DecisionTree {
 				}
 			}
 		}
+		/*
+		for(int i=0; i<examples.size(); i++) {
+			if(attribute.test(examples.get(i))) {
+				if(examples.get(i).charAt(examples.get(i).length() -1) == 'E') {
+					pkT += 1;
+				} else {
+					nkT += 1;
+				}
+				
+			} else {
+				if(examples.get(i).charAt(examples.get(i).length() -1) == 'E') {
+					pkF += 1;
+				} else {
+					nkF += 1;
+				}
+			}
+		} */
 		return (1 - 
 				((((pkT + nkT) / (p + n)) * entropy(pkT / (pkT + nkT))) +
 				(((pkF + nkF) / (p + n)) * entropy(pkF / (pkF + nkF)))
